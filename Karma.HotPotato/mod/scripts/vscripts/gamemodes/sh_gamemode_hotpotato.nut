@@ -45,4 +45,6 @@ void function HotPotatoRegisterNetworkVars()
 		return
 
 	Remote_RegisterFunction( "ServerCallback_AnnounceHotPotato" )
+	Remote_RegisterFunction( "ServerCallback_ShowHotPotatoCountdown" )
+	Remote_RegisterFunction( "ServerCallback_PassedHotPotato" )
 }

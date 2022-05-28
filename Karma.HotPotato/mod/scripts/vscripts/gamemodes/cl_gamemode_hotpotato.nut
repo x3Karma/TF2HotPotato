@@ -32,3 +32,18 @@ void function ServerCallback_AnnounceNewMark( int survivorEHandle )
 	AnnouncementFromClass( GetLocalViewPlayer(), announcement )
 }
 
+void function ServerCallback_PassedHotPotato()
+{
+	entity player = GetEntityFromEncodedEHandle( survivorEHandle )
+
+	StartParticleEffectOnEntity( localPlayer.GetCockpit(), GetParticleSystemIndex( $"P_MFD" ), FX_PATTACH_ABSORIGIN_FOLLOW, -1 )
+	EmitSoundOnEntity( localPlayer, "UI_InGame_MarkedForDeath_PlayerMarked"  )
+	HideEventNotification()
+	AnnouncementData announcement = Announcement_Create( "#HOTPOTATO_PASSED" )
+	Announcement_SetTitleColor( announcement, <1,0,0> )
+	Announcement_SetPurge( announcement, true )
+	Announcement_SetPriority( announcement, 200 ) //Be higher priority than Titanfall ready indicator etc
+	Announcement_SetSoundAlias( announcement, SFX_HUD_ANNOUNCE_QUICK )
+	Announcement_SetStyle( announcement, ANNOUNCEMENT_STYLE_QUICK )
+	AnnouncementFromClass( GetLocalViewPlayer(), announcement )
+}
