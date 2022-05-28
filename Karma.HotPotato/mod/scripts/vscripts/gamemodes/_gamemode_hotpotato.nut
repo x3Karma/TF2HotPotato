@@ -50,7 +50,7 @@ void function MarkRandomPlayer(entity player)
 	if (GetGameState() != eGameState.Playing)
 		return
 	
-    if (!IsAlive(player) || !IsValid(player) )
+    if (!IsAlive(player) || !IsValid(player) || file.realplayers.find(player) == -1)
     {
         thread MarkRandomPlayer( GetRandomPlayer() )
         return
@@ -67,6 +67,7 @@ void function MarkRandomPlayer(entity player)
     file.firstmarked = true
 
 	Highlight_SetEnemyHighlight( player, "enemy_boss_bounty" ) // red outline
+	RunBurnCardUseFunc( victim, "burnmeter_maphack" )
     file.marked = player
     thread HotPotatoCountdown()
 }
@@ -77,9 +78,6 @@ void function HotPotatoCountdown()
     while ( Time() < file.hotpotatobegin + file.hotpotatoend )
     {
         wait 1
-		string message = "Hot Potato exploding " + (file.hotpotatobegin + file.hotpotatoend - Time()) + " seconds."
-		foreach ( entity player in GetPlayerArray() )
-			SendHudMessage( player, message, -1, 0.2, 255, 0, 0, 0, 0, 1, 0.15 )
     }
     
     // kill player once timer runs out
@@ -115,6 +113,7 @@ void function MarkNewPlayer( entity victim, var damageInfo )
         SetRoundWinningKillReplayAttacker(attacker)
         attacker.AddToPlayerGameStat( PGS_ASSAULT_SCORE, 1 )
 		Remote_CallFunction_NonReplay( victim, "ServerCallback_PassedHotPotato")
+		RunBurnCardUseFunc( victim, "burnmeter_maphack" )
     }
 }
 
@@ -135,7 +134,7 @@ void function UpdateHotPotatoLoadout( entity player )
 			player.TakeWeaponNow( weapon.GetWeaponClassName() )
 
         // check if this player is inside file.realplayers
-        if (file.realplayers.find(player))
+        if (file.realplayers.find(player) != -1 || !file.firstmarked )
         {
 		    player.GiveOffhandWeapon( "melee_pilot_emptyhanded", OFFHAND_MELEE, [ "allow_as_primary" ])
 		    player.GiveOffhandWeapon( "mp_ability_heal", OFFHAND_LEFT )
@@ -161,25 +160,25 @@ void function HotPotatoPlayerKilled( entity player, entity attacker, var damageI
     int i = 0
     entity winner
     foreach( entity p in GetPlayerArray() )
+	{
         if (IsAlive(p))
         {
             i++
             winner = p
         }
-		else
-		{
-			// if this player is in file.realplayers, lower file.aliveplayers by one and remove them from file.realplayers
-			if (file.realplayers.find(p))
-			{
-				file.aliveplayers--
-				file.realplayers.remove(file.realplayers.find(p))
-			}
-		}
+	}
+	// if this player is in file.realplayers, lower file.aliveplayers by one and remove them from file.realplayers
+	if (file.realplayers.find(player) != -1)
+	{
+		file.aliveplayers--
+		file.realplayers.remove(file.realplayers.find(player))
+	}
 
-    if (i == 1 && file.aliveplayers == 1)
-        SetWinner( winner.GetTeam() )
+    if (file.aliveplayers == 1)
+        SetWinner( file.realplayers[0].GetTeam() )
     else if (i == 0)
         SetWinner( TEAM_UNASSIGNED )
+
 }
 
 entity function GetRandomPlayer()
