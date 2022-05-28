@@ -44,7 +44,7 @@ void function HotPotatoRegisterNetworkVars()
 	if ( GAMETYPE != GAMEMODE_HOTPOTATO )
 		return
 
-	Remote_RegisterFunction( "ServerCallback_AnnounceHotPotato" )
 	Remote_RegisterFunction( "ServerCallback_ShowHotPotatoCountdown" )
+	Remote_RegisterFunction( "ServerCallback_AnnounceNewMark" )
 	Remote_RegisterFunction( "ServerCallback_PassedHotPotato" )
 }

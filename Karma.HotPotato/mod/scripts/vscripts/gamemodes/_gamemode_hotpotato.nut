@@ -23,7 +23,8 @@ void function GamemodeHotPotato_Init()
 	ClassicMP_ForceDisableEpilogue( true )
 
 	AddCallback_OnClientConnected( HotPotatoInitPlayer )
-	AddCallback_OnPlayerRespawned( UpdateLoadout )
+	AddCallback_OnPlayerRespawned( UpdateHotPotatoLoadout )
+    AddCallback_OnClientDisconnected( HotPotatoPlayerDisconnected )
     AddCallback_GameStateEnter( eGameState.Playing, HotPotatoInit )
 
     AddDamageCallback( "player", MarkNewPlayer )
@@ -31,6 +32,7 @@ void function GamemodeHotPotato_Init()
 
 void function HotPotatoInit()
 {
+    file.hotpotatoend = GetCurrentPlaylistVarFloat( "hotpotato_timer", 30.0)
     thread HotPotatoInitCountdown()
 }
 
@@ -50,7 +52,7 @@ void function MarkRandomPlayer(entity player)
 	if (GetGameState() != eGameState.Playing)
 		return
 	
-    if (!IsAlive(player) || !IsValid(player) || file.realplayers.find(player) == -1)
+    if (!IsAlive(player) || !IsValid(player) )
     {
         thread MarkRandomPlayer( GetRandomPlayer() )
         return
@@ -62,13 +64,14 @@ void function MarkRandomPlayer(entity player)
     {
 		Highlight_ClearEnemyHighlight(p)
 	    Remote_CallFunction_NonReplay( p, "ServerCallback_ShowHotPotatoCountdown", file.hotpotatobegin + file.hotpotatoend )
-	    Remote_CallFunction_NonReplay( p, "ServerCallback_AnnounceNewMark", player.GetEncodedEHandle() )
+        if( p != player )
+	        Remote_CallFunction_NonReplay( p, "ServerCallback_AnnounceNewMark", player.GetEncodedEHandle() )
     }
     file.firstmarked = true
 
 	Highlight_SetEnemyHighlight( player, "enemy_boss_bounty" ) // red outline
-	RunBurnCardUseFunc( victim, "burnmeter_maphack" )
     file.marked = player
+	Remote_CallFunction_NonReplay( player, "ServerCallback_PassedHotPotato")
     thread HotPotatoCountdown()
 }
 
@@ -77,6 +80,9 @@ void function HotPotatoCountdown()
     // wait until Time() reaches file.hotpotatoend
     while ( Time() < file.hotpotatobegin + file.hotpotatoend )
     {
+		string message = "Hot Potato exploding in " + (file.hotpotatobegin + file.hotpotatoend - Time()) + " seconds."
+		foreach ( entity player in GetPlayerArray() )
+			SendHudMessage( player, message, -1, 0.2, 255, 0, 0, 0, 0, 1, 0.15 )
         wait 1
     }
     
@@ -113,13 +119,22 @@ void function MarkNewPlayer( entity victim, var damageInfo )
         SetRoundWinningKillReplayAttacker(attacker)
         attacker.AddToPlayerGameStat( PGS_ASSAULT_SCORE, 1 )
 		Remote_CallFunction_NonReplay( victim, "ServerCallback_PassedHotPotato")
-		RunBurnCardUseFunc( victim, "burnmeter_maphack" )
     }
 }
 
 void function HotPotatoInitPlayer( entity player )
 {
 	UpdateHotPotatoLoadout( player )
+}
+
+void function HotPotatoPlayerDisconnected( entity player )
+{
+    //if this player was in file.realplayers we remove them from the array as well as lower file.aliveplayers by one
+    if ( file.realplayers.find( player ) != -1 )
+    {
+        file.realplayers.remove( file.realplayers.find( player ) )
+        file.aliveplayers--
+    }
 }
 
 void function UpdateHotPotatoLoadout( entity player )
@@ -134,7 +149,7 @@ void function UpdateHotPotatoLoadout( entity player )
 			player.TakeWeaponNow( weapon.GetWeaponClassName() )
 
         // check if this player is inside file.realplayers
-        if (file.realplayers.find(player) != -1 || !file.firstmarked )
+        if (file.realplayers.find(player) != -1 || !file.firstmarked)
         {
 		    player.GiveOffhandWeapon( "melee_pilot_emptyhanded", OFFHAND_MELEE, [ "allow_as_primary" ])
 		    player.GiveOffhandWeapon( "mp_ability_heal", OFFHAND_LEFT )
@@ -158,15 +173,9 @@ void function UpdateHotPotatoLoadout( entity player )
 void function HotPotatoPlayerKilled( entity player, entity attacker, var damageInfo )
 {
     int i = 0
-    entity winner
     foreach( entity p in GetPlayerArray() )
-	{
         if (IsAlive(p))
-        {
             i++
-            winner = p
-        }
-	}
 	// if this player is in file.realplayers, lower file.aliveplayers by one and remove them from file.realplayers
 	if (file.realplayers.find(player) != -1)
 	{
@@ -176,7 +185,7 @@ void function HotPotatoPlayerKilled( entity player, entity attacker, var damageI
 
     if (file.aliveplayers == 1)
         SetWinner( file.realplayers[0].GetTeam() )
-    else if (i == 0)
+    else if (i == 0 || file.aliveplayers == 0)
         SetWinner( TEAM_UNASSIGNED )
 
 }

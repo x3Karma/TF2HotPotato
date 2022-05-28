@@ -1,6 +1,7 @@
 global function ClGamemodeHotPotato_Init
 global function ServerCallback_ShowHotPotatoCountdown
-global function ServerCallback_AnnounceFirstMarked
+global function ServerCallback_AnnounceNewMark
+global function ServerCallback_PassedHotPotato
 
 struct {
 	var countdownRui
@@ -9,6 +10,7 @@ struct {
 void function ClGamemodeHotPotato_Init()
 {
 	ClGameState_RegisterGameStateAsset( $"ui/gamestate_info_lts.rpak" )
+	ClGameState_RegisterGameStateAsset( $"ui/gamestate_info_ffa.rpak" )
 }
 
 void function ServerCallback_ShowHotPotatoCountdown( float endTime )
@@ -34,8 +36,7 @@ void function ServerCallback_AnnounceNewMark( int survivorEHandle )
 
 void function ServerCallback_PassedHotPotato()
 {
-	entity player = GetEntityFromEncodedEHandle( survivorEHandle )
-
+	entity localPlayer = GetLocalClientPlayer()
 	StartParticleEffectOnEntity( localPlayer.GetCockpit(), GetParticleSystemIndex( $"P_MFD" ), FX_PATTACH_ABSORIGIN_FOLLOW, -1 )
 	EmitSoundOnEntity( localPlayer, "UI_InGame_MarkedForDeath_PlayerMarked"  )
 	HideEventNotification()
