@@ -80,9 +80,6 @@ void function HotPotatoCountdown()
     // wait until Time() reaches file.hotpotatoend
     while ( Time() < file.hotpotatobegin + file.hotpotatoend )
     {
-		string message = "Hot Potato exploding in " + (file.hotpotatobegin + file.hotpotatoend - Time()) + " seconds."
-		foreach ( entity player in GetPlayerArray() )
-			SendHudMessage( player, message, -1, 0.2, 255, 0, 0, 0, 0, 1, 0.15 )
         wait 1
     }
     
