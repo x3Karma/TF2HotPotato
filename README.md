@@ -1,2 +1,2 @@
-# TF2HotPotato
-Titanfall | 2 Northstar client gamemode.
+# OLD REPO
+### LOOK FOR NEWER ONE AT https://github.com/x3Karma/HotPotato
